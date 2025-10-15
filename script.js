@@ -22,10 +22,9 @@ local minimized = false
 local worldDropdownOpen = false
 local rankDropdownOpen = false
 
---// Lista de mundos (agora com "All")
+--// Lista de mundos (sem Mundo 1 e Mundo 11)
 local worldOptions = {
     "All",
-    "Mundo 1",
     "Mundo 2",
     "Mundo 3", 
     "Mundo 4",
@@ -34,8 +33,7 @@ local worldOptions = {
     "Mundo 7",
     "Mundo 8",
     "Mundo 9",
-    "Mundo 10",
-    "Mundo 11"
+    "Mundo 10"
 }
 
 --// Opções de rank (removidos 4 e 7)
@@ -92,8 +90,8 @@ local function checkAirWallExists()
 	local mapsFolder = Workspace:FindFirstChild("Maps")
 	if not mapsFolder then return false, 0 end
 	
-	-- Verifica mapas de 0 a 11
-	for i = 0, 11 do
+	-- Verifica mapas de 1 a 10 (sem 0 e 11)
+	for i = 1, 10 do
 		local mapPath = mapsFolder:FindFirstChild("Map" .. i)
 		-- Verifica também o Map 103 (que é o Map 3 antigo)
 		if i == 3 then
@@ -115,10 +113,10 @@ local function executeSequence()
 	if not running then return end
 
 	while running do
-		-- Se "All" em mundos, preenche todos os mundos de 0 a 10 (evento)
+		-- Se "All" em mundos, preenche todos os mundos de 1 a 10 (evento)
 		local worldsToUse = {}
 		if #selectedWorlds == 0 then  -- Significa "All"
-			for i = 0, 10 do
+			for i = 1, 10 do
 				table.insert(worldsToUse, tostring(i))
 			end
 		else
@@ -355,9 +353,9 @@ for i,name in ipairs(worldOptions) do
             btnWorld.Text = "All Mundos"
             notify("Selecionado: Todos os Mundos")
         else
-            -- CORREÇÃO: O número para o evento é sempre 1 a menos que o mostrado
-            -- Mundo 1 no menu = 0 no evento, Mundo 2 no menu = 1 no evento, etc.
-            local eventWorldNum = i - 2  -- i=1 (All), i=2 (Mundo 1) = 0, i=3 (Mundo 2) = 1, etc.
+            -- CORREÇÃO: O número para o evento é igual ao mostrado
+            -- Mundo 2 no menu = 1 no evento, Mundo 3 no menu = 2 no evento, etc.
+            local eventWorldNum = i - 1  -- i=1 (All), i=2 (Mundo 2) = 1, i=3 (Mundo 3) = 2, etc.
             
             selectedWorlds = {tostring(eventWorldNum)}
             btnWorld.Text = name -- atualiza botão com nome bonito
