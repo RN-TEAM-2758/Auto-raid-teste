@@ -15,14 +15,16 @@ local StartChallengeRaidMap = ReplicatedStorage:WaitForChild("Remotes"):WaitForC
 local running = false
 local userWorld = nil
 local selectedRanks = {}
+local selectedWorlds = {}
 
 --// Estados da GUI
 local minimized = false
 local worldDropdownOpen = false
 local rankDropdownOpen = false
 
---// Lista de mundos
+--// Lista de mundos (agora com "All")
 local worldOptions = {
+    "All",
     "Mundo 2",
     "Mundo 3", 
     "Mundo 4",
@@ -105,23 +107,39 @@ local function executeSequence()
 	if not running then return end
 
 	while running do
-		-- Se "All", preenche ranks aqui
+		-- Se "All" em mundos, preenche todos os mundos de 1 a 9
+		local worldsToUse = {}
+		if #selectedWorlds == 0 then  -- Significa "All"
+			for i = 1, 9 do
+				table.insert(worldsToUse, tostring(i))
+			end
+		else
+			worldsToUse = selectedWorlds
+		end
+		
+		-- Se "All" em ranks, preenche todos os ranks disponíveis
+		local ranksToUse = {}
 		if #selectedRanks == 0 then  -- Significa "All"
 			for i, option in ipairs(rankOptions) do
 				if option ~= "All" then
-					table.insert(selectedRanks, tonumber(option))
+					table.insert(ranksToUse, tonumber(option))
 				end
 			end
+		else
+			ranksToUse = selectedRanks
 		end
 		
-		for _, rank in ipairs(selectedRanks) do
+		-- Executa para cada combinação de mundo e rank
+		for _, world in ipairs(worldsToUse) do
+			for _, rank in ipairs(ranksToUse) do
+				if not running then break end
+				local args = {tonumber("9300" .. world .. rank)}
+				pcall(function()
+					CreateRaidTeam:InvokeServer(unpack(args))
+				end)
+				task.wait(0)
+			end
 			if not running then break end
-			-- CORREÇÃO: userWorld já é o número correto para o evento (1 a menos que o mostrado)
-			local args = {tonumber("9300" .. userWorld .. rank)}
-			pcall(function()
-				CreateRaidTeam:InvokeServer(unpack(args))
-			end)
-			task.wait(0.3)
 		end
 
 		if running then
@@ -324,15 +342,21 @@ for i,name in ipairs(worldOptions) do
     setupButtonEffects(b)
     
     b.MouseButton1Click:Connect(function()
-        -- CORREÇÃO: O número para o evento é sempre 1 a menos que o mostrado
-        -- Mundo 2 no menu = 1 no evento, Mundo 3 no menu = 2 no evento, etc.
-        local worldNum = i + 1  -- i começa em 1 (Mundo 2), então i+1 = número real
-        local eventWorldNum = worldNum - 1  -- Para o evento, subtrai 1
-        
-        userWorld = tostring(eventWorldNum)  -- Guarda o número correto para o evento
-        btnWorld.Text = name -- atualiza botão com nome bonito
+        if name == "All" then
+            selectedWorlds = {}
+            btnWorld.Text = "All Mundos"
+            notify("Selecionado: Todos os Mundos")
+        else
+            -- CORREÇÃO: O número para o evento é sempre 1 a menos que o mostrado
+            -- Mundo 2 no menu = 1 no evento, Mundo 3 no menu = 2 no evento, etc.
+            local worldNum = i  -- i começa em 1 (All), então i=2 (Mundo 2), i=3 (Mundo 3), etc.
+            local eventWorldNum = worldNum - 1  -- Para o evento, subtrai 1
+            
+            selectedWorlds = {tostring(eventWorldNum)}
+            btnWorld.Text = name -- atualiza botão com nome bonito
+            notify("Mundo selecionado: " .. name .. " (Evento: " .. eventWorldNum .. ")")
+        end
         TweenService:Create(worldPanel, TweenInfo.new(0.25, Enum.EasingStyle.Quart), {Position = UDim2.new(1,0,0,0)}):Play()
-        notify("Mundo selecionado: " .. name .. " (Evento: " .. eventWorldNum .. ")")
     end)
 end
 
@@ -377,12 +401,13 @@ for i,option in ipairs(rankOptions) do
         btnRank.Text = option
         if option == "All" then
             selectedRanks = {}
+            notify("Selecionado: Todos os Ranks")
         else
             local rankNum = tonumber(option)
             selectedRanks = {rankNum}
+            notify("Rank selecionado: " .. option)
         end
         TweenService:Create(rankPanel, TweenInfo.new(0.25, Enum.EasingStyle.Quart), {Position = UDim2.new(1,0,0,0)}):Play()
-        notify("Rank selecionado: " .. option)
     end)
 end
 
@@ -441,7 +466,10 @@ btnStart.MouseButton1Click:Connect(function()
 		running = true
 		btnStart.Text = "PARAR"
 		btnStart.BackgroundColor3 = Color3.fromRGB(180, 60, 60)  -- Vermelho quando ativo
-		notify("Auto Raid iniciado! Mundo: " .. btnWorld.Text .. " | Rank: " .. btnRank.Text)
+		
+		local worldText = btnWorld.Text
+		local rankText = btnRank.Text
+		notify("Auto Raid iniciado! " .. worldText .. " | " .. rankText)
 		coroutine.wrap(executeSequence)()
 	end
 end)
