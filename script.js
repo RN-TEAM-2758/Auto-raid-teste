@@ -25,6 +25,7 @@ local rankDropdownOpen = false
 --// Lista de mundos (agora com "All")
 local worldOptions = {
     "All",
+    "Mundo 1",
     "Mundo 2",
     "Mundo 3", 
     "Mundo 4",
@@ -33,7 +34,8 @@ local worldOptions = {
     "Mundo 7",
     "Mundo 8",
     "Mundo 9",
-    "Mundo 10"
+    "Mundo 10",
+    "Mundo 11"
 }
 
 --// Opções de rank (removidos 4 e 7)
@@ -90,8 +92,14 @@ local function checkAirWallExists()
 	local mapsFolder = Workspace:FindFirstChild("Maps")
 	if not mapsFolder then return false, 0 end
 	
-	for i = 0, 9 do
+	-- Verifica mapas de 0 a 11
+	for i = 0, 11 do
 		local mapPath = mapsFolder:FindFirstChild("Map" .. i)
+		-- Verifica também o Map 103 (que é o Map 3 antigo)
+		if i == 3 then
+			mapPath = mapsFolder:FindFirstChild("Map103") or mapPath
+		end
+		
 		if mapPath and mapPath:FindFirstChild("Map") and mapPath.Map:FindFirstChild("AirWall") then
 			local airWall = mapPath.Map.AirWall
 			if airWall:FindFirstChild("1") and airWall:FindFirstChild("1"):IsA("Model") then
@@ -107,10 +115,10 @@ local function executeSequence()
 	if not running then return end
 
 	while running do
-		-- Se "All" em mundos, preenche todos os mundos de 1 a 9
+		-- Se "All" em mundos, preenche todos os mundos de 0 a 10 (evento)
 		local worldsToUse = {}
 		if #selectedWorlds == 0 then  -- Significa "All"
-			for i = 1, 9 do
+			for i = 0, 10 do
 				table.insert(worldsToUse, tostring(i))
 			end
 		else
@@ -137,7 +145,7 @@ local function executeSequence()
 				pcall(function()
 					CreateRaidTeam:InvokeServer(unpack(args))
 				end)
-				task.wait(0)
+				wait(-99)
 			end
 			if not running then break end
 		end
@@ -348,9 +356,8 @@ for i,name in ipairs(worldOptions) do
             notify("Selecionado: Todos os Mundos")
         else
             -- CORREÇÃO: O número para o evento é sempre 1 a menos que o mostrado
-            -- Mundo 2 no menu = 1 no evento, Mundo 3 no menu = 2 no evento, etc.
-            local worldNum = i  -- i começa em 1 (All), então i=2 (Mundo 2), i=3 (Mundo 3), etc.
-            local eventWorldNum = worldNum - 1  -- Para o evento, subtrai 1
+            -- Mundo 1 no menu = 0 no evento, Mundo 2 no menu = 1 no evento, etc.
+            local eventWorldNum = i - 2  -- i=1 (All), i=2 (Mundo 1) = 0, i=3 (Mundo 2) = 1, etc.
             
             selectedWorlds = {tostring(eventWorldNum)}
             btnWorld.Text = name -- atualiza botão com nome bonito
